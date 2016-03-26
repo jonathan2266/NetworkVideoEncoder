@@ -12,8 +12,8 @@ namespace NetworkVideoEncoder
     {
         private static List<string> IP;
         private static string directory;
-        private static string extension;
         private static int masterRender;
+        private static string ffmpegCommand;
 
         private static string configFile = "VideoEncoder.conf";
 
@@ -77,7 +77,7 @@ namespace NetworkVideoEncoder
             }
 
             //start master
-            master m = new master(IP, directory , extension , masterRender); 
+            master m = new master(IP, directory, masterRender, ffmpegCommand); 
 
         }
 
@@ -100,13 +100,13 @@ namespace NetworkVideoEncoder
                     {
                         type = 2;
                     }
-                    else if (extension == null)
-                    {
-                        type = 3;
-                    }
                     else if (masterRender == int.MaxValue)
                     {
                         type = 4;
+                    }
+                    else if (ffmpegCommand == null)
+                    {
+                        type = 5;
                     }
                     else
                     {
@@ -146,9 +146,9 @@ namespace NetworkVideoEncoder
                         {
                             directory = buffer;
                         }
-                        if (type == 3)
+                        if (type == 5)
                         {
-                            extension = buffer;
+                            ffmpegCommand = buffer;
                         }
                     }
                 }
@@ -173,9 +173,9 @@ namespace NetworkVideoEncoder
             StreamWriter writer = new StreamWriter(configFile, true);
             writer.WriteLine("#list of IP's#" + Environment.NewLine + "#like with no Hashtag :192.168.1.2,172.5.2.9: #" + Environment.NewLine);
             writer.WriteLine("#Directory full dir's like in linux  :/..../:#" + Environment.NewLine);
-            writer.WriteLine("#extension like :.mkv:   or anything else possible#" + Environment.NewLine);
             writer.WriteLine("#master does render to#");
-            writer.WriteLine(":masterRender=1:");
+            writer.WriteLine(":masterRender=1:" + Environment.NewLine);
+            writer.WriteLine("#ffmpeg command line#");
             writer.Close();
             Console.WriteLine("conf file created");
             Console.ReadLine();

@@ -9,16 +9,16 @@ namespace NetworkVideoEncoder
     class master
     {
         private string directory;
-        private string extension;
         private List<string> iP;
         private int masterRender;
+        private string ffmpegCommand;
 
-        public master(List<string> iP, string directory, string extension, int masterRender)
+        public master(List<string> iP, string directory, int masterRender, string ffmpegCommand)
         {
             this.iP = iP;
             this.directory = directory;
-            this.extension = extension;
             this.masterRender = masterRender;
+            this.ffmpegCommand = ffmpegCommand;
         }
     }
 }
