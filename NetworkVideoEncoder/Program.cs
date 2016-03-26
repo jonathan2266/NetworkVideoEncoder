@@ -10,6 +10,8 @@ namespace NetworkVideoEncoder
 {
     class Program
     {
+        private static int port = 8002;
+
         private static List<string> IP;
         private static string directory;
         private static int masterRender;
@@ -17,7 +19,7 @@ namespace NetworkVideoEncoder
 
         private static string configFile = "VideoEncoder.conf";
 
-        public static object IPAdress { get; private set; }
+        public static object IPAddress { get; private set; }
 
         static void Main(string[] args)
         {
@@ -34,7 +36,7 @@ namespace NetworkVideoEncoder
             }
             else if (answer == "slave")
             {
-                slave s = new slave(8002);
+                slave s = new slave(port);
             }
             else
             {
@@ -77,7 +79,7 @@ namespace NetworkVideoEncoder
             }
 
             //start master
-            master m = new master(IP, directory, masterRender, ffmpegCommand); 
+            master m = new master(IP, directory, masterRender, ffmpegCommand, port); 
 
         }
 
@@ -159,7 +161,7 @@ namespace NetworkVideoEncoder
         {
             try
             {
-                IPAddress.Parse(buffer);
+                System.Net.IPAddress.Parse(buffer);
                 IP.Add(buffer);
             }
             catch (FormatException e)
