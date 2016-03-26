@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -29,11 +30,42 @@ namespace MD5_V4._0_C
             worker.RunWorkerAsync();
         }
 
-        public void sendData(string data)
+        public void sendData(string fileDirectory)
         {
-            byte[] bdata = Encoding.ASCII.GetBytes(data);
-            stream.WriteAsync(bdata, 0, bdata.Length); //probably have to communicate the lenght of the file first. Name does not realy matter when the master remembers it
+
+
+            BackgroundWorker sendHelper = new BackgroundWorker();
+            sendHelper.DoWork += SendHelper_DoWork;
+            object info = fileDirectory;
+            sendHelper.RunWorkerAsync(info);
         }
+
+        private void SendHelper_DoWork(object sender, DoWorkEventArgs e)
+        {
+            string fileDirectory = e.Argument as string;
+
+            FileInfo info = new FileInfo(fileDirectory);
+            long size = info.Length;
+            string extension = Path.GetExtension(fileDirectory);
+            string fileInfo = ":FileLenght=" + size + "::Extension=" + extension + ":";
+
+            byte[] data = Encoding.ASCII.GetBytes(fileInfo);
+            stream.Write(data,0,data.Length);
+            
+            Thread.Sleep(2);
+
+            Stream s = File.OpenRead(fileDirectory);
+            byte[] swag = new byte[50000000];
+            int bytesread;
+            while ((bytesread = s.Read(swag, 0, swag.Length)) > 0) { }
+            {
+                stream.Write(swag, 0, bytesread);
+            }
+
+            data = Encoding.ASCII.GetBytes(":END:");
+            stream.Write(data, 0, data.Length);
+        }
+
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             buffer = new byte[sizeOfbyte];
@@ -81,6 +113,7 @@ namespace MD5_V4._0_C
             }
         }
     }
+
 
     public class MyEventArgs : EventArgs
     {
