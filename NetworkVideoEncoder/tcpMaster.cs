@@ -9,16 +9,16 @@ using System.Threading;
 namespace MD5_V4._0_C
 {
 
-    public delegate void MyEventHandler(object source, MyEventArgs e);
+    public delegate void MyEventHandler(object source, MyeventArgs e);
+    public delegate void MyEventHandlerEx(object source, MyEventArgsEx e);
     public class tcpMaster
     {
         private TcpClient client;
         private NetworkStream stream;
-        private bool run = true;
-        private byte[] buffer;
-        private int sizeOfbyte = 100000000;
         public event MyEventHandler GotData;
+        public event MyEventHandlerEx GotEx;
         private int nr;
+        private string fileLocation;
         
         public tcpMaster(TcpClient client, NetworkStream stream,int nr)
         {
@@ -26,14 +26,14 @@ namespace MD5_V4._0_C
             this.stream = stream;
             this.nr = nr;
             BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_DoWork; //check if it recieves stuff //cancelasync
+            worker.DoWork += recieveHelper; //check if it recieves stuff //cancelasync
             worker.RunWorkerAsync();
         }
 
         public void sendData(string fileDirectory)
         {
 
-
+            fileLocation = fileDirectory;
             BackgroundWorker sendHelper = new BackgroundWorker();
             sendHelper.DoWork += SendHelper_DoWork;
             object info = fileDirectory;
@@ -52,76 +52,169 @@ namespace MD5_V4._0_C
             byte[] data = Encoding.ASCII.GetBytes(fileInfo);
             stream.Write(data,0,data.Length);
             
-            Thread.Sleep(2);
+            Thread.Sleep(10);
 
             Stream s = File.OpenRead(fileDirectory);
             byte[] swag = new byte[50000000];
             int bytesread;
-            while ((bytesread = s.Read(swag, 0, swag.Length)) > 0) { }
+            while ((bytesread = s.Read(swag, 0, swag.Length)) > 0)
             {
                 stream.Write(swag, 0, bytesread);
             }
 
-            data = Encoding.ASCII.GetBytes(":END:");
-            stream.Write(data, 0, data.Length);
+            //data = Encoding.ASCII.GetBytes(":END:");
+            //stream.Write(data, 0, data.Length);
         }
 
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        private void recieveHelper(object sender, DoWorkEventArgs e)
         {
-            buffer = new byte[sizeOfbyte];
-            StringBuilder data = new StringBuilder();
+            byte[] buffer = new byte[500];
+            bool firstRecieved = false;
+            long size = 0;
+            string extension;
+            long amountRecieved = 0;
 
-            while (run)
+            while (true)
             {
                 try
                 {
                     if (stream.DataAvailable)
                     {
                         int nrbytes = stream.Read(buffer, 0, buffer.Length);
-                        data.Append(Encoding.ASCII.GetString(buffer, 0, nrbytes));
-                        buffer = new byte[nrbytes + 100];
-
-                        B: //to check if there is more usefull stuff to write away at this time
-
-                        int count = 0;
-                        for (int i = 0; i < data.Length; i++)
+                        if (firstRecieved == false)
                         {
-                            if (data[i] == ':')
+                            analyzeRecieved(nrbytes, buffer, out size, out extension);
+                            GotEx(this, new MyEventArgsEx(nr, extension, size));
+                            buffer = new byte[100 * 1000 * 1000]; //same as 100MB not dem M$ MiB -__-
+                            firstRecieved = true;
+                        }
+                        else
+                        {
+                            amountRecieved += nrbytes;
+                            GotData(this, new MyeventArgs(nr, buffer));
+                            if (amountRecieved == size)
                             {
-                                count++;
-                                if (count == 2)
-                                {
-                                    string responseData = data.ToString(1, i - 1); // other borders to remove the :
-                                    if (GotData != null)
-                                    {
-                                        GotData(this, new MyEventArgs(responseData, nr)); //raise event
-
-                                    }
-                                    data.Remove(0, i + 1);
-                                    goto B;
-                                }
+                                break;
                             }
                         }
                     }
                 }
-                catch (SocketException)
+                catch (Exception)
                 {
                     throw;
                 }
-
-                Thread.Sleep(2);
             }
         }
+
+        private void analyzeRecieved(int nrbytes, byte[] buffer, out long size, out string extension)
+        {
+            long sizeT = 0;
+            string extensionT = "";
+            string temp = "";
+
+            int counter = 0;
+            string data = Encoding.ASCII.GetString(buffer, 0, nrbytes);
+            char[] convertedData = data.ToCharArray();
+            char[] fileL = filter1.ToCharArray();
+
+
+            for (int i = 0; i < convertedData.Length; i++)
+            {
+                A:
+                if (convertedData[i] == filter1[counter])
+                {
+                    counter++;
+                    if (counter == filter1.Length)
+                    {
+                        #region
+                        for (int j = i; j < convertedData.Length; j++)
+                        {
+                            if (convertedData[j] != ':')
+                            {
+                                temp += convertedData[j];
+                            }
+                            else
+                            {
+                                sizeT = Convert.ToInt64(temp);
+                                temp = "";
+                                break;
+                            }
+                        }
+                        #endregion
+                    }
+                    i++;
+                    goto A;
+                }
+                else
+                {
+                    counter = 0;
+                }
+
+                B:
+                if (convertedData[i] == filter2[counter])
+                {
+                    counter++;
+                    if (counter == filter2.Length)
+                    {
+                        #region
+                        for (int j = i; j < convertedData.Length; j++)
+                        {
+                            if (convertedData[j] != ':')
+                            {
+                                temp += convertedData[j];
+                            }
+                            else
+                            {
+                                extensionT = temp;
+                                temp = "";
+                                break;
+                            }
+                        }
+                        #endregion
+                    }
+                    i++;
+                    goto B;
+                }
+                else
+                {
+                    counter = 0;
+                }
+            }
+
+            size = sizeT;
+            extension = extensionT;
+
+        }
+
+        private string filter1 = ":FileLenght=";
+        private string filter2 = ":Extension=";
+
     }
 
 
-    public class MyEventArgs : EventArgs
+
+    public class MyEventArgsEx : EventArgs
+    {
+        private object[] EventInfo = new object[3];
+        public MyEventArgsEx(int nr , string extension, long size)
+        {
+            EventInfo[0] = nr;
+            EventInfo[1] = extension;
+            EventInfo[2] = size;
+        }
+        public object[] GetInfo()
+        {
+            return EventInfo;
+        }
+    }
+
+    public class MyeventArgs : EventArgs
     {
         private object[] EventInfo = new object[2];
-        public MyEventArgs(string recieved, int nr)
+        public MyeventArgs(int nr, byte[] recieved)
         {
-            EventInfo[0] = recieved;
-            EventInfo[1] = nr;
+            EventInfo[0] = nr;
+            EventInfo[1] = recieved;
         }
         public object[] GetInfo()
         {

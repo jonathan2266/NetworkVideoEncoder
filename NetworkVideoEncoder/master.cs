@@ -55,6 +55,7 @@ namespace NetworkVideoEncoder
                     nr++;
                     tcpMaster connection = new tcpMaster(client, stream, nr);
                     connection.GotData += Connection_GotData;
+                    connection.GotEx += Connection_GotEx;
                     listOfConnections.Add(connection);
                 }
                 catch (SocketException e)
@@ -64,7 +65,12 @@ namespace NetworkVideoEncoder
             }
         }
 
-        private void Connection_GotData(object source, MyEventArgs e)
+        private void Connection_GotEx(object source, MyEventArgsEx e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Connection_GotData(object source, MyeventArgs e)
         {
             throw new NotImplementedException();
         }
