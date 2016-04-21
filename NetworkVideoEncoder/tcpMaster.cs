@@ -52,7 +52,7 @@ namespace MD5_V4._0_C
             byte[] data = Encoding.ASCII.GetBytes(fileInfo);
             stream.Write(data,0,data.Length);
             
-            Thread.Sleep(10);
+            Thread.Sleep(50);
 
             Stream s = File.OpenRead(fileDirectory);
             byte[] swag = new byte[50000000];
