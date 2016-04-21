@@ -68,7 +68,7 @@ namespace NetworkVideoEncoder
                     }
                     else
                     {
-                        //all vids are done
+                        //all vids are done  //gotto love breaking stuff
                     }
 
                 }
