@@ -10,7 +10,6 @@ namespace MD5_V4._0_C
         private NetworkStream stream;
         private TcpClient client;
         public event MyEventHandler GotData;
-        public event MyEventHandlerEx GotEx;
         public tcpSlave(TcpClient client, NetworkStream stream)
         {
             this.client = client;
@@ -19,102 +18,70 @@ namespace MD5_V4._0_C
         public void Recieve()
         {
             byte[] buffer = new byte[50000000];
-            bool recievedHeader = false;
-
+            byte[] videoBuffer = new byte[100000000];
+            int videoBufferFilled = 0;
             while (true)
             {
                 if (stream.DataAvailable)
                 {
                     int nrbytes = stream.Read(buffer, 0, buffer.Length);
 
-                    //now lets see if there are 4 ':' to be found
+                    //now lets see if there are 6 ':' to be found
                     int count = 0;
                     bool passedCheck = false;
 
-                    for (int i = 0; i < buffer.Length; i++)
-                    {
-                        if (buffer[i] == ':')
-                        {
-                            count++;
-                            if (count == 4 && i + 1 == buffer.Length)
-                            {
-                                //get the data and break
-                                getHeader(buffer); 
-                                passedCheck = true;
-                                break;
-                            }
-                            else if (count == 4)
-                            {
-                                //filter out the correct part and calc the remaining stuff
-                                getHeader(buffer);
-                                passedCheck = true;
-                            }
-                        }
-                    }
-
                     if (passedCheck)
                     {
-
-                    }
-                    else
-                    {
-
-                    }
-                }
-            }
-            byte[] recieved = new byte[50000000];
-            stream.Read(recieved, 0, recieved.Length);
-            string final = Encoding.ASCII.GetString(recieved);
-            string final2 =  final.Trim('\0');
-            return final2;
-        }
-
-        private void getHeader(byte[] buffer)
-        {
-            string FL = "";
-            string Ex = "";
-            bool first = true;
-
-            for (int i = 0; i < buffer.Length; i++) 
-            {
-                if (buffer[i] == '=') 
-                {
-                    for (int j = i + 1; j < buffer.Length; j++) 
-                    {
-
-                        if (buffer[i] != ':')
+                        if (buffer[0] == ':')
                         {
-                            if (first)
-                            {
-                                FL += buffer[j];
-                            }
-                            else
-                            {
-                                Ex += buffer[j];
-                            }
-
+                            GotData(this, new MyeventArgs(2, buffer));
+                            break;
                         }
                         else
                         {
-                            first = false;
-                            break;
+                            for (int i = 0; i < nrbytes; i++)
+                            {
+                                videoBuffer[i + videoBufferFilled] = buffer[i];
+                            }
+                            videoBufferFilled += nrbytes;
                         }
-                     }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < buffer.Length; i++)
+                        {
+                            if (buffer[i] == ':')
+                            {
+                                count++;
+                                if (count == 4 && i + 1 == buffer.Length)
+                                {
+                                    //get the data and break
+                                    GotData(this, new MyeventArgs(0, buffer));
+                                    buffer = new byte[50000000];
+                                    passedCheck = true;
+                                    break;
+                                }
+                                else if (count == 4)
+                                {
+                                    //filter out the correct part and calc the remaining stuff
+                                    passedCheck = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            
-
+            //byte[] recieved = new byte[50000000];
+            //stream.Read(recieved, 0, recieved.Length);
+            //string final = Encoding.ASCII.GetString(recieved);
+            //string final2 =  final.Trim('\0');
         }
 
-        public void SendStuff(string data)
+        public void sendData(string data)
         {
             string final = ":" + data + ":";
             byte[] send = Encoding.ASCII.GetBytes(final);
             stream.WriteAsync(send, 0, send.Length); //fixed everything for some reason
         }
-
-        private string filter1 = ":FileLenght=";
-        private string filter2 = ":Extension=";
-
     }
 }

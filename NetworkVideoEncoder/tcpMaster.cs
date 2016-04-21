@@ -30,24 +30,29 @@ namespace MD5_V4._0_C
             worker.RunWorkerAsync();
         }
 
-        public void sendData(string fileDirectory)
+        public void sendData(string fileDirectory, string ffmpegCommand)
         {
 
             fileLocation = fileDirectory;
             BackgroundWorker sendHelper = new BackgroundWorker();
             sendHelper.DoWork += SendHelper_DoWork;
-            object info = fileDirectory;
+            object[] info = new object[2];
+            info[1] = fileDirectory;
+            info[2] = ffmpegCommand;
             sendHelper.RunWorkerAsync(info);
         }
 
         private void SendHelper_DoWork(object sender, DoWorkEventArgs e)
         {
-            string fileDirectory = e.Argument as string;
+            object[] arguments = e.Argument as object[];
+
+            string fileDirectory = arguments[0] as string;
+            string ffmpegCommand = arguments[1] as string;
 
             FileInfo info = new FileInfo(fileDirectory);
             long size = info.Length;
             string extension = Path.GetExtension(fileDirectory);
-            string fileInfo = ":FileLenght=" + size + "::Extension=" + extension + ":";
+            string fileInfo = ":" + size + ":" + extension + ":" + ffmpegCommand + ":";
 
             byte[] data = Encoding.ASCII.GetBytes(fileInfo);
             stream.Write(data,0,data.Length);

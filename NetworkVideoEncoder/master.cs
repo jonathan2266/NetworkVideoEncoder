@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using test;
 
@@ -17,8 +18,13 @@ namespace NetworkVideoEncoder
         private string ffmpegCommand;
         private int port;
 
-        private string[] videos;
+        private string[] videos; //vids found in dir that needs to be processed
+        private int[] CompletedVideos; //keeps track of the onces that are done  0 not sended 1 sended but not finished 2 finished
+
         private List<tcpMaster> listOfConnections;
+        private bool[] slaveIsBusy;
+        private bool[] recievedHeader;
+        private int[] jobGivenToSlave; //stores int of videos
 
         public master(List<string> iP, string directory, int masterRender, string ffmpegCommand, int port)
         {
@@ -30,6 +36,7 @@ namespace NetworkVideoEncoder
 
             fileCheck();
             connectToSlaves();
+            sizeArrays();
             while (true)
             {
                 startJobs();
@@ -39,9 +46,58 @@ namespace NetworkVideoEncoder
 
         private void startJobs()
         {
-            
+            for (int i = 0; i < slaveIsBusy.Length; i++)
+            {
+                if (slaveIsBusy[i] == false)
+                {
+                    int videoToSend = -1;
+                    for (int j = 0; j < CompletedVideos.Length; j++)
+                    {
+                        if (CompletedVideos[j] == 0)
+                        {
+                            videoToSend = j;
+                            CompletedVideos[j] = 1;
+                            break;
+                        }
+                    }
+                    if (videoToSend != -1)
+                    {
+                        listOfConnections[i].sendData(videos[videoToSend],ffmpegCommand);
+                        jobGivenToSlave[i] = videoToSend;
+                        slaveIsBusy[i] = true;
+                    }
+                    else
+                    {
+                        //all vids are done
+                    }
+
+                }
+            }
+
+            Thread.Sleep(100);
         }
 
+        private void sizeArrays()
+        {
+            slaveIsBusy = new bool[listOfConnections.Count];
+            recievedHeader = new bool[listOfConnections.Count];
+            jobGivenToSlave = new int[listOfConnections.Count];
+
+            CompletedVideos = new int[videos.Length];
+
+            for (int i = 0; i < listOfConnections.Count; i++)
+            {
+                slaveIsBusy[i] = false;
+                recievedHeader[i] = false;
+                jobGivenToSlave[i] = 0;
+            }
+
+            for (int i = 0; i < videos.Length; i++)
+            {
+                CompletedVideos[i] = 0;
+            }
+
+    }
         private void connectToSlaves()
         {
             int nr = -1;
