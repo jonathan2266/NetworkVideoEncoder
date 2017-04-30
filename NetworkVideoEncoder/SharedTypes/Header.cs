@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace SharedTypes
 {
-    public enum Header
+    public enum Header //klasse
     {
         ID,
         TRUE,
-        FALSE
+        FALSE,
+        job
     }
 }

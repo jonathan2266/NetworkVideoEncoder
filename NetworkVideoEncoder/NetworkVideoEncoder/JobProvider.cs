@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SharedTypes;
 using System.IO;
+using System.Threading;
 
 namespace NetworkVideoEncoder
 {
@@ -48,9 +49,53 @@ namespace NetworkVideoEncoder
         {
             while (true)
             {
-                
+                foreach (var slave in slaves)
+                {
+                    SlaveObject obj = slave.Value;
+
+                    if (!obj.HasJob && obj.slave.IsAlive)
+                    {
+                        giveJob(slave);
+                        slave.Value.HasJob = true;
+                        sendJob(slave);
+                    }
+                }
             }
         }
+
+        private void sendJob(KeyValuePair<int, SlaveObject> slave) //run on manage thread need class to manage send
+        {
+            FileStream stream = File.OpenRead(slave.Value.CurrentJob);
+            int l = 100000000; // = 100MB
+            byte[] data = new byte[l];
+
+            while (true)
+            {
+                int read = stream.Read(data, 0, l);
+                slave.Value.slave.SendTCP(data);
+
+                if (read != l)
+                {
+                    break;
+                }
+            }
+        }
+
+        private void giveJob(KeyValuePair<int, SlaveObject> slave)
+        {
+            foreach (var job in jobs)
+            {
+                if (!job.isGivenAsJob)
+                {
+                    job.isGivenAsJob = true;
+                    job.slaveID = slave.Key;
+                    slave.Value.CurrentJob = job.jobURL;
+                    string command = Header.job.ToString() + ":" + job.jobURL;
+                    slave.Value.slave.SendTCP(Encoding.ASCII.GetBytes(command));
+                }
+            }
+        }
+
         public void AddSlave(TCPgeneral slave)
         {
             int id = generateUniqueID(slave);
@@ -75,6 +120,12 @@ namespace NetworkVideoEncoder
         {
             int id = getID(data);
         }
+
+        private int getID(byte[] data)
+        {
+            
+        }
+
         private void OnError(ErrorTypes type, string message)
         {
 
