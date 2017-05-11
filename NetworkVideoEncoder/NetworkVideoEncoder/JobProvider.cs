@@ -2,32 +2,38 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using SharedTypes;
 using System.IO;
+using SharedTypes;
+using System.Linq;
 using System.Threading;
 
 namespace NetworkVideoEncoder
 {
     public class JobProvider
     {
-        private int currentID = 0;
-
-        private ConcurrentDictionary<int, SlaveObject> slaves;
+        private List<SlaveObject> slaves;
         private List<Job> jobs;
         private string output;
         private string ffmpegCommand;
+        private StreamHelper streamer;
+        private bool isDone;
 
         public JobProvider(string ffmpeg, string source, string output)
         {
             this.output = output;
+            streamer = new StreamHelper(4, source, output);
+            isDone = false;
 
-            slaves = new ConcurrentDictionary<int, SlaveObject>();
+            slaves = new List<SlaveObject>();
             jobs = new List<Job>();
 
             string[] files = Directory.GetFiles(source);
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                files[i] = Path.GetFileName(files[i]);
+            }
 
             for (int i = 0; i < files.Length; i++)
             {
@@ -47,88 +53,124 @@ namespace NetworkVideoEncoder
         }
         public void RunJobs()
         {
-            while (true)
+            while (!isDone)
             {
-                foreach (var slave in slaves)
+                lock (slaves)
                 {
-                    SlaveObject obj = slave.Value;
-
-                    if (!obj.HasJob && obj.slave.IsAlive)
+                    foreach (var slave in slaves)
                     {
-                        giveJob(slave);
-                        slave.Value.HasJob = true;
-                        sendJob(slave);
+                        if (!slave.HasJob && slave.socket.IsAlive)
+                        {
+                            giveJob(slave);
+                            slave.HasJob = true;
+                            streamer.AddSlaveToSendQeue(slave);
+                        }
+                        else if (slave.isDone && slave.socket.IsAlive)
+                        {
+                            Job jo = jobs.Where(j => j.slaveID == slave.socket.ID).FirstOrDefault();
+                            Console.WriteLine("job: " + jo.jobURL + " is done");
+                            jo.isDone = true;
+                            jo.slaveID = -1;
+                            slave.HasJob = false;
+                            slave.isDone = false;
+                            slave.JobStarted = DateTime.MinValue;
+                            slave.LastSeen = DateTime.Now;
+                        }
+                        else if (!slave.socket.IsAlive)
+                        {
+                            Console.WriteLine("lost connection with " + slave.socket.ID);
+                            Job jo = jobs.Where(j => j.slaveID == slave.socket.ID).FirstOrDefault();
+
+                            if (jo != null)
+                            {
+                                jo.isGivenAsJob = false;
+                                jo.isDone = false;
+                                jo.slaveID = -1;
+                            }
+                            slave.socket.Dispose();
+                        }
+                    }
+
+                    for (int i = 0; i < slaves.Count; i++)
+                    {
+                        if (slaves[i].socket.IsAlive == false)
+                        {
+                            slaves.RemoveAt(i);
+                            i--;
+                        }
                     }
                 }
+                Thread.Sleep(1);
             }
         }
 
-        private void sendJob(KeyValuePair<int, SlaveObject> slave) //run on manage thread need class to manage send
-        {
-            FileStream stream = File.OpenRead(slave.Value.CurrentJob);
-            int l = 100000000; // = 100MB
-            byte[] data = new byte[l];
-
-            while (true)
-            {
-                int read = stream.Read(data, 0, l);
-                slave.Value.slave.SendTCP(data);
-
-                if (read != l)
-                {
-                    break;
-                }
-            }
-        }
-
-        private void giveJob(KeyValuePair<int, SlaveObject> slave)
+        private void giveJob(SlaveObject obj)
         {
             foreach (var job in jobs)
             {
                 if (!job.isGivenAsJob)
                 {
                     job.isGivenAsJob = true;
-                    job.slaveID = slave.Key;
-                    slave.Value.CurrentJob = job.jobURL;
-                    string command = Header.job.ToString() + ":" + job.jobURL;
-                    slave.Value.slave.SendTCP(Encoding.ASCII.GetBytes(command));
+                    job.slaveID = obj.socket.ID;
+                    obj.CurrentJob = job.jobURL;
+                    obj.socket.SendTCP(Headers.AssembleHeader(Headers.Job, Encoding.ASCII.GetBytes(job.jobURL)));
+                    obj.socket.SendTCP(Headers.AssembleHeader(Headers.ffmpegCommand, Encoding.ASCII.GetBytes(ffmpegCommand)));
+                    break;
                 }
             }
         }
 
         public void AddSlave(TCPgeneral slave)
         {
-            int id = generateUniqueID(slave);
-            slave.OnError = OnError;
-            slave.OnRawDataRecieved = RecievedData;
+            lock (slaves)
+            {
+                slave.OnError = OnError;
+                slave.OnRawDataRecieved += RecievedData;
+                slave.Start();
 
-            SlaveObject obj = new SlaveObject();
-            obj.slave = slave;
-            obj.HasJob = false;
-            obj.LastSeen = DateTime.Now;
-            slaves.TryAdd(id, obj);
+                SlaveObject obj = new SlaveObject();
+                obj.socket = slave;
+                obj.HasJob = false;
+                obj.LastSeen = DateTime.Now;
+                obj.JobStarted = DateTime.MinValue;
+                obj.isDone = false;
+                slaves.Add(obj);
+            }
         }
 
-        private int generateUniqueID(TCPgeneral slave)
+        private void RecievedData(int id, byte[] data)
         {
-            string message = Header.ID.ToString() + ":" + currentID;
-            slave.SendTCP(Encoding.ASCII.GetBytes(message));
-            currentID++;
-            return currentID - 1;
-        }
-        private void RecievedData(byte[] data)
-        {
-            int id = getID(data);
+            byte[] header = Headers.GetHeaderFromData(data);
+
+            if (header.SequenceEqual(Headers.HelloUpdate))
+            {
+                lock (slaves)
+                {
+                    SlaveObject obj = slaves.Where(s => s.socket.ID == id).FirstOrDefault();
+                    obj.LastSeen = DateTime.Now;
+                }
+            }
+            else if (header.SequenceEqual(Headers.RenderCompleted))
+            {
+                lock (slaves)
+                {
+                    streamer.AddSlaveToRecieveQeue(slaves.Where(s => s.socket.ID == id).FirstOrDefault());
+                    Console.WriteLine("ID: " + id + " renderCompleted");
+                }
+
+                //send to recieveclass
+            }
+            else if (header.SequenceEqual(Headers.RenderError))
+            {
+                // log job from being bad or maybe ffmpeg command being bad 
+                Console.WriteLine("ID: " + id + " renderError");
+            }
+
         }
 
-        private int getID(byte[] data)
+        private void OnError(int id, ErrorTypes type, string message)
         {
-            
-        }
-
-        private void OnError(ErrorTypes type, string message)
-        {
-
+            Console.WriteLine("lost connection with:" + id + "  " + type.ToString() + "       " + message);
         }
     }
 }

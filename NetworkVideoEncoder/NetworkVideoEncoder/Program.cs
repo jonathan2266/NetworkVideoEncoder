@@ -13,7 +13,8 @@ namespace NetworkVideoEncoder
 {
     class Program
     {
-        static string usage = "command line input: ffmpeg command file  source folder output folder udpPort";
+        static int currentID = 0;
+        static string usage = "command line input: ffmpeg_command_file  source_folder output_folder udpPort";
         static string broadCast = "networkVideoEncoder";
         static string ffmpeg;
         static string source;
@@ -27,6 +28,8 @@ namespace NetworkVideoEncoder
             if (args.Length != 4)
             {
                 Console.WriteLine(usage);
+                Console.ReadLine();
+                Environment.Exit(0);
             }
 
             ffmpeg = args[0];
@@ -68,8 +71,10 @@ namespace NetworkVideoEncoder
             while (true)
             {
                 TcpClient client = master.Listen();
-                provider.AddSlave(new TCPgeneral(client));
-                Thread.Sleep(1);
+                if (client != null)
+                {
+                    provider.AddSlave(new TCPgeneral(client, currentID++));
+                }
             }
         }
     }

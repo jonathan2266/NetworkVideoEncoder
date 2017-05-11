@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Master", "NetworkVideoEncoder\Master.csproj", "{A4A128D8-1E40-49C7-876A-A1376188C1B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedTypes", "SharedTypes\SharedTypes.csproj", "{825F525F-54B6-4FB3-9339-9B17E1AD922B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Slave", "Slave\Slave.csproj", "{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{825F525F-54B6-4FB3-9339-9B17E1AD922B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{825F525F-54B6-4FB3-9339-9B17E1AD922B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{825F525F-54B6-4FB3-9339-9B17E1AD922B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
