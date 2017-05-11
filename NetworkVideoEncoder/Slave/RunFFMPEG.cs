@@ -10,44 +10,53 @@ namespace Slave
 {
     public class RunFFMPEG
     {
-        private string binLocationL = @"/usr/bin/";
+        private string binLocationL = @"/usr/bin/ffmpeg";
         private Process ffmpegProcess;
-        private string binaryL = "ffmpeg";
         private string binaryW = @"ffmpeg.exe";
-        private StreamReader error;
-        private StreamReader output;
+        private StreamWriter input;
 
         public RunFFMPEG(string command)
         {
             ffmpegProcess = new Process();
             if (IsLinux())
             {
-                ffmpegProcess.StartInfo.FileName = binLocationL + binaryL;
+                ffmpegProcess.StartInfo.FileName = binLocationL;
+                ffmpegProcess.StartInfo.CreateNoWindow = true;
+                ffmpegProcess.StartInfo.UseShellExecute = false;
             }
             else
             {
                 ffmpegProcess.StartInfo.FileName = binaryW;
+                ffmpegProcess.StartInfo.CreateNoWindow = false;
+                ffmpegProcess.StartInfo.UseShellExecute = true;
             }
             ffmpegProcess.StartInfo.Arguments = command;
-            ffmpegProcess.StartInfo.CreateNoWindow = false;
-            ffmpegProcess.StartInfo.UseShellExecute = true;
-            //ffmpegProcess.StartInfo.RedirectStandardError = true;
-            //ffmpegProcess.StartInfo.RedirectStandardOutput = true;
+
+            //ffmpegProcess.StartInfo.RedirectStandardInput = true;
+            ffmpegProcess.EnableRaisingEvents = true;
+            ffmpegProcess.ErrorDataReceived += FfmpegProcess_ErrorDataReceived;
+            ffmpegProcess.OutputDataReceived += FfmpegProcess_OutputDataReceived;
+        }
+
+        private void FfmpegProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data.Contains("already exists."))
+            {
+                //input.WriteLine("y");
+                Console.WriteLine("File already exists... overwriting");
+            }
+        }
+
+        private void FfmpegProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Console.WriteLine("ffmpeg error: " + e.Data);
         }
 
         public void Start()
         {
             ffmpegProcess.Start();
-
+            //input = ffmpegProcess.StandardInput;
             ffmpegProcess.WaitForExit();
-            //error = ffmpegProcess.StandardError;
-            //output = ffmpegProcess.StandardOutput;
-            //ffmpegProcess.WaitForExit();
-
-            //string er = error.ReadToEnd();
-            //string outs = output.ReadToEnd();
-
-
         }
 
         private bool IsLinux()

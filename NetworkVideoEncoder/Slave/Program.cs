@@ -42,6 +42,8 @@ namespace Slave
 
                 if (client != null)
                 {
+                    client.SendBufferSize = 64000;
+                    client.ReceiveBufferSize = 64000; //needed for linux
                     break;
                 }
             }
