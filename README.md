@@ -3,7 +3,7 @@ Using c# and ffmpeg to encode video's over a network both in mono and windows
 
 **early version but works!!**
 
-## ussage
+## usage
 
 * Linux requires that the ffmpeg binary is under /usr/bin/
 * Windows requires that the ffmpeg.exe binary is supplied locally next to the slave.exe
