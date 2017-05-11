@@ -41,7 +41,10 @@ namespace NetworkVideoEncoder
                 if (currentStreams < maxStreams && RecieveWaiting.Count > 0 && RecieveWaiting.TryDequeue(out obj))
                 {
                     currentStreams++;
-                    Thread streamThread = new Thread(() => { new DownStream(obj, output).start(); });
+                    Thread streamThread = new Thread(() => {
+                        new DownStream(obj, output).start();
+                        currentStreams--;
+                    });
                     streamThread.IsBackground = true;
                     streamThread.Start();
                 }
@@ -57,7 +60,9 @@ namespace NetworkVideoEncoder
                 if (currentStreams < maxStreams && SendWaiting.Count > 0 && SendWaiting.TryDequeue(out obj))
                 {
                     currentStreams++;
-                    Thread streamThread = new Thread(() => { new UpStream(obj, source).start(); });
+                    Thread streamThread = new Thread(() => {
+                        new UpStream(obj, source).start(); });
+                    currentStreams--;
                     streamThread.IsBackground = true;
                     streamThread.Start();
                 }
