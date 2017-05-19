@@ -73,10 +73,10 @@ namespace NetworkVideoEncoder
                         obj.socket.SendTCP(Headers.AssembleHeader(Headers.PieceOfVideo, data));
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Console.WriteLine("Exception in upstream: " + e.Message);
                     stream.Close();
-                    //stop
                 }
             }
 
