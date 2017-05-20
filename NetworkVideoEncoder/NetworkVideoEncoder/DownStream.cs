@@ -18,13 +18,13 @@ namespace NetworkVideoEncoder
         private string output;
         private AutoResetEvent waitHandle;
 
-        public DownStream(SlaveObject obj, string output)
+        public DownStream(SlaveObject obj, string output, string extenstion)
         {
             waitHandle = new AutoResetEvent(false);
             this.output = output;
             pieceOfVideo = null;
             this.obj = obj;
-            stream = File.OpenWrite(Path.Combine(output, obj.CurrentJob));
+            stream = File.OpenWrite(Path.Combine(output, Path.GetFileNameWithoutExtension(obj.CurrentJob) + extenstion));
             obj.socket.OnRawDataRecieved += onRecieved;
             obj.socket.OnError += OnError;
         }
@@ -35,9 +35,7 @@ namespace NetworkVideoEncoder
             waitHandle.WaitOne();
 
             stream.Close();
-            obj.socket.OnRawDataRecieved -= onRecieved;
-            obj.socket.OnError -= OnError;
-            obj.isDone = true;
+            
         }
         private void onRecieved(int id, byte[] rawData)
         {
@@ -54,18 +52,26 @@ namespace NetworkVideoEncoder
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("write exception");
+                    Console.WriteLine("Downstream write exception: " + e.Message);
                     stream.Close();
                 }
             }
             else if (Headers.SendCompleted.SequenceEqual(header))
             {
                 waitHandle.Set();
+
+                obj.socket.OnRawDataRecieved -= onRecieved;
+                obj.socket.OnError -= OnError;
+                obj.isDone = true;
+                obj.Finished();
             }
         }
         private void OnError(int id, ErrorTypes type, string message)
         {
             waitHandle.Set();
+
+            obj.socket.OnRawDataRecieved -= onRecieved;
+            obj.socket.OnError -= OnError;
         }
     }
 }

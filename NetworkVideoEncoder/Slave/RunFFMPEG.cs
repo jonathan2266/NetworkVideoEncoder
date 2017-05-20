@@ -13,7 +13,6 @@ namespace Slave
         private string binLocationL = @"/usr/bin/ffmpeg";
         private Process ffmpegProcess;
         private string binaryW = @"ffmpeg.exe";
-        private StreamWriter input;
 
         public RunFFMPEG(string command)
         {
@@ -31,31 +30,11 @@ namespace Slave
                 ffmpegProcess.StartInfo.UseShellExecute = true;
             }
             ffmpegProcess.StartInfo.Arguments = command;
-
-            //ffmpegProcess.StartInfo.RedirectStandardInput = true;
-            ffmpegProcess.EnableRaisingEvents = true;
-            ffmpegProcess.ErrorDataReceived += FfmpegProcess_ErrorDataReceived;
-            ffmpegProcess.OutputDataReceived += FfmpegProcess_OutputDataReceived;
-        }
-
-        private void FfmpegProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e.Data.Contains("already exists."))
-            {
-                //input.WriteLine("y");
-                Console.WriteLine("File already exists... overwriting");
-            }
-        }
-
-        private void FfmpegProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Console.WriteLine("ffmpeg error: " + e.Data);
         }
 
         public void Start()
         {
             ffmpegProcess.Start();
-            //input = ffmpegProcess.StandardInput;
             ffmpegProcess.WaitForExit();
         }
 

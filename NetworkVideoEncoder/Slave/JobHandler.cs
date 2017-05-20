@@ -16,19 +16,16 @@ namespace Slave
         private string ffmpegCommand;
         private string job;
         private FileStream stream;
-        private volatile bool recieved;
         private RunFFMPEG ffmpeg;
         private string outputFile;
         private bool sendCompleted;
         private ManualResetEvent reset;
 
-        public JobHandler(TCPgeneral gen, string outputFile)
+        public JobHandler(TCPgeneral gen)
         {
             reset = new ManualResetEvent(false);
             sendCompleted = false;
-            this.outputFile = outputFile;
             this.gen = gen;
-            recieved = false;
             gen.OnRawDataRecieved += OnRecieved;
             gen.OnError += OnError;
         }
@@ -52,7 +49,6 @@ namespace Slave
                 reset.Set();
 
                 sendCompleted = false;
-                recieved = false;
                 ffmpegCommand = null;
                 job = null;
 
@@ -84,9 +80,25 @@ namespace Slave
             {
                 byte[] data;
                 Headers.SplitData(rawData, out header, out data);
-                ffmpegCommand = Encoding.ASCII.GetString(data);
+                ffmpegCommand = @Encoding.ASCII.GetString(data);
+
                 string formatted = ffmpegCommand.Replace("DATA", @job);
-                formatted = formatted.Replace("OUT", outputFile);
+                outputFile = "OUT";
+                int ind = formatted.IndexOf("OUT");
+                ind += 3;
+
+                for (int i = ind; i < formatted.Length; i++)
+                {
+                    if (formatted[i] != '"')
+                    {
+                        outputFile += formatted[i];
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
                 ffmpeg = new RunFFMPEG(formatted);
                 Console.WriteLine("command:" + formatted);
             }
@@ -95,7 +107,7 @@ namespace Slave
                 byte[] data;
                 Headers.SplitData(rawData, out header, out data);
                 stream = new FileStream(Encoding.ASCII.GetString(data), FileMode.Append);
-                job = Encoding.ASCII.GetString(data);
+                job = @Encoding.ASCII.GetString(data);
                 Console.WriteLine("job " + job);
             }
             else if (Headers.PieceOfVideo.SequenceEqual(header))

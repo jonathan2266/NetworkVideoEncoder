@@ -14,15 +14,22 @@ namespace NetworkVideoEncoder
         private volatile int currentStreams;
         private string source;
         private string output;
+        private string extenstion;
+        private ManualResetEvent recieveBlock;
+        private ManualResetEvent sendBlock;
 
-        public StreamHelper(int maxConcurrentStreams, string source, string output)
+        public StreamHelper(int maxConcurrentStreams, string source, string output, string extenstion)
         {
             this.source = source;
             this.output = output;
+            this.extenstion = extenstion;
             SendWaiting = new ConcurrentQueue<SlaveObject>();
             RecieveWaiting = new ConcurrentQueue<SlaveObject>();
             maxStreams = maxConcurrentStreams;
             currentStreams = 0;
+
+            recieveBlock = new ManualResetEvent(false);
+            sendBlock = new ManualResetEvent(false);
 
             streamSendWorker = new Thread(new ThreadStart(sendWorker));
             streamSendWorker.IsBackground = true;
@@ -38,17 +45,27 @@ namespace NetworkVideoEncoder
 
             while (true)
             {
+                recieveBlock.WaitOne();
+
                 if (currentStreams < maxStreams && RecieveWaiting.Count > 0 && RecieveWaiting.TryDequeue(out obj))
                 {
                     currentStreams++;
                     Thread streamThread = new Thread(() => {
-                        new DownStream(obj, output).start();
+                        recieveBlock.Reset();
+                        new DownStream(obj, output, extenstion).start();
                         currentStreams--;
                     });
                     streamThread.IsBackground = true;
                     streamThread.Start();
+
+                    lock (RecieveWaiting)
+                    {
+                        if (RecieveWaiting.IsEmpty)
+                        {
+                            recieveBlock.Reset();
+                        }
+                    }
                 }
-                Thread.Sleep(1);
             }
         }
         private void sendWorker()
@@ -57,6 +74,8 @@ namespace NetworkVideoEncoder
 
             while (true)
             {
+                sendBlock.WaitOne();
+
                 if (currentStreams < maxStreams && SendWaiting.Count > 0 && SendWaiting.TryDequeue(out obj))
                 {
                     currentStreams++;
@@ -65,22 +84,37 @@ namespace NetworkVideoEncoder
                     currentStreams--;
                     streamThread.IsBackground = true;
                     streamThread.Start();
+
+                    lock (SendWaiting)
+                    {
+                        if (SendWaiting.IsEmpty)
+                        {
+                            sendBlock.Reset();
+                        }
+                    }
                 }
-                Thread.Sleep(1);
             }
         }
         public void AddSlaveToSendQeue(SlaveObject obj)
         {
             if (obj != null)
             {
-                SendWaiting.Enqueue(obj);
+                lock (SendWaiting)
+                {
+                    SendWaiting.Enqueue(obj);
+                    sendBlock.Set();
+                }
             }
         }
         public void AddSlaveToRecieveQeue(SlaveObject obj)
         {
             if (obj != null)
             {
-                RecieveWaiting.Enqueue(obj);
+                lock (RecieveWaiting)
+                {
+                    RecieveWaiting.Enqueue(obj);
+                    recieveBlock.Set();
+                }
             }
         }
         public void Dispose()

@@ -50,7 +50,7 @@ namespace Slave
 
             TCPgeneral gen = new TCPgeneral(client, 0);
 
-            JobHandler job = new JobHandler(gen, "OUT.mkv");
+            JobHandler job = new JobHandler(gen);
 
             while (true)
             {

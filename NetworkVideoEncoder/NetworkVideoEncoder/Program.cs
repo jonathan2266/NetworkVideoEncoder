@@ -73,6 +73,7 @@ namespace NetworkVideoEncoder
                 TcpClient client = master.Listen();
                 if (client != null)
                 {
+                    Console.WriteLine("new client found");
                     client.SendBufferSize = 64000;
                     client.ReceiveBufferSize = 64000; //needed for linux
                     provider.AddSlave(new TCPgeneral(client, currentID++));
