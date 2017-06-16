@@ -77,13 +77,13 @@ namespace NetworkVideoEncoder
         }
         private void giveJobs()
         {
-            lock (slaves)
+            foreach (var slave in slaves)
             {
-                foreach (var slave in slaves)
+                if (!slave.HasJob && slave.socket.IsAlive)
                 {
-                    if (!slave.HasJob && slave.socket.IsAlive)
+                    foreach (var job in jobs)
                     {
-                        foreach (var job in jobs)
+                        lock (job)
                         {
                             if (!job.isGivenAsJob)
                             {
@@ -148,41 +148,46 @@ namespace NetworkVideoEncoder
                 // log job from being bad or maybe ffmpeg command being bad 
                 Console.WriteLine("ID: " + id + " renderError");
 
-                lock (slaves)
+                SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
+                if (obj != null)
                 {
-                    SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
-                    if (obj != null)
+                    lock (obj)
                     {
                         Job jo = jobs.Where(j => j.slaveID == obj.socket.ID).FirstOrDefault();
 
                         if (jo != null)
                         {
-                            jo.isGivenAsJob = false;
-                            jo.isDone = false;
-                            jo.slaveID = -1;
+                            lock (jo)
+                            {
+                                jo.isGivenAsJob = false;
+                                jo.isDone = false;
+                                jo.slaveID = -1;
+                            }
                         }
                     }
                 }
             }
-
         }
 
         private void OnError(int id, ErrorTypes type, string message)
         {
             Console.WriteLine("lost connection with:" + id + "  " + type.ToString() + "       " + message);
 
-            lock (slaves)
+            SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
+            if (obj != null)
             {
-                SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
-                if (obj != null)
+                lock (obj)
                 {
                     Job jo = jobs.Where(j => j.slaveID == obj.socket.ID).FirstOrDefault();
 
                     if (jo != null)
                     {
-                        jo.isGivenAsJob = false;
-                        jo.isDone = false;
-                        jo.slaveID = -1;
+                        lock (jo)
+                        {
+                            jo.isGivenAsJob = false;
+                            jo.isDone = false;
+                            jo.slaveID = -1;
+                        }
                     }
                     obj.socket.Dispose();
 
@@ -196,13 +201,16 @@ namespace NetworkVideoEncoder
 
             if (jo != null)
             {
-                Console.WriteLine("job: " + jo.jobURL + " is done");
-                jo.isDone = true;
-                jo.slaveID = -1;
-                obj.HasJob = false;
-                obj.isDone = false;
-                obj.JobStarted = DateTime.MinValue;
-                obj.LastSeen = DateTime.Now;
+                lock (jo)
+                {
+                    Console.WriteLine("job: " + jo.jobURL + " is done");
+                    jo.isDone = true;
+                    jo.slaveID = -1;
+                    obj.HasJob = false;
+                    obj.isDone = false;
+                    obj.JobStarted = DateTime.MinValue;
+                    obj.LastSeen = DateTime.Now;
+                }
             }
 
             giveJobs();

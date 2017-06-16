@@ -60,18 +60,24 @@ namespace NetworkVideoEncoder
             {
                 waitHandle.Set();
 
-                obj.socket.OnRawDataRecieved -= onRecieved;
-                obj.socket.OnError -= OnError;
-                obj.isDone = true;
-                obj.Finished();
+                lock (obj)
+                {
+                    obj.socket.OnRawDataRecieved -= onRecieved;
+                    obj.socket.OnError -= OnError;
+                    obj.isDone = true;
+                    obj.Finished();
+                }
             }
         }
         private void OnError(int id, ErrorTypes type, string message)
         {
             waitHandle.Set();
 
-            obj.socket.OnRawDataRecieved -= onRecieved;
-            obj.socket.OnError -= OnError;
+            lock (obj)
+            {
+                obj.socket.OnRawDataRecieved -= onRecieved;
+                obj.socket.OnError -= OnError;
+            }
         }
     }
 }

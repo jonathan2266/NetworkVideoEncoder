@@ -44,9 +44,12 @@ namespace NetworkVideoEncoder
             reset.WaitOne();
 
             stream.Close();
-            obj.socket.OnRawDataRecieved -= OnRecieve;
-            obj.socket.OnError -= OnError;
 
+            lock (obj)
+            {
+                obj.socket.OnRawDataRecieved -= OnRecieve;
+                obj.socket.OnError -= OnError;
+            }
         }
         private void sendNextPiece()
         {

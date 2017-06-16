@@ -8,6 +8,7 @@ using AbstractTCPlib.UDPdiscovery;
 using System.Net.Sockets;
 using System.Threading;
 using SharedTypes;
+using System.IO;
 
 namespace Slave
 {
@@ -48,6 +49,8 @@ namespace Slave
                 }
             }
 
+            clearOutFile();
+
             TCPgeneral gen = new TCPgeneral(client, 0);
 
             JobHandler job = new JobHandler(gen);
@@ -56,6 +59,18 @@ namespace Slave
             {
                 job.start();
             }
+        }
+
+        private static void clearOutFile()
+        {
+            var files = Directory.GetFiles("", "OUT");
+
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
+
+            
         }
     }
 }
