@@ -3,7 +3,7 @@ Using c# and ffmpeg to encode a batch of video's or music over a network both in
 
 **early version but works!!**
 
-## usage
+## Usage
 
 * Linux requires that the ffmpeg binary is under /usr/bin/
 * Windows requires that the ffmpeg.exe binary is supplied locally next to the slave.exe
@@ -28,8 +28,12 @@ Slave 8081
 
 Slave tcpPort
 
-## limitations
+## Limitations
 
 * Video to pictures is not supported
 * The NetworkVideoEncoder has to be started before the slaves.
   * UDP discovery can be improved
+
+## Future
+
+* detect and handle an ffmpeg crash or y/n statement
