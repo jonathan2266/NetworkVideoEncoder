@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{6B1FA431-2D8A-4DC0-8633-A8D8182D0014}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Slave</RootNamespace>
-    <AssemblyName>Slave</AssemblyName>
+    <RootNamespace>Client</RootNamespace>
+    <AssemblyName>Client</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AbstractTCPlib">
-      <HintPath>..\NetworkVideoEncoder\DLL\AbstractTCPlib.dll</HintPath>
+      <HintPath>..\Server\DLL\AbstractTCPlib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

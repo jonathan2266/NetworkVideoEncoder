@@ -1,11 +1,11 @@
 ﻿using AbstractTCPlib;
 using System;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
-    public class SlaveObject
+    public class ClientObject
     {
-        public Action<SlaveObject> OnFinished;
+        public Action<ClientObject> OnFinished;
 
         public TCPgeneral socket { get; set; }
         public bool HasJob { get; set; }

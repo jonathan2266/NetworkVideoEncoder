@@ -10,7 +10,7 @@ using System.Threading;
 using SharedTypes;
 using System.IO;
 
-namespace Slave
+namespace Client
 {
     class Program
     {
@@ -63,14 +63,12 @@ namespace Slave
 
         private static void clearOutFile()
         {
-            var files = Directory.GetFiles("", "OUT");
+            //var files = Directory.GetFiles("", "OUT");
 
-            foreach (var file in files)
-            {
-                File.Delete(file);
-            }
-
-            
+            //foreach (var file in files)
+            //{
+            //    File.Delete(file);
+            //}
         }
     }
 }

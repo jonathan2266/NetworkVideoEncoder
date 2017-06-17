@@ -2,12 +2,12 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
     public class StreamHelper: IDisposable
     {
-        private ConcurrentQueue<SlaveObject> SendWaiting;
-        private ConcurrentQueue<SlaveObject> RecieveWaiting;
+        private ConcurrentQueue<ClientObject> SendWaiting;
+        private ConcurrentQueue<ClientObject> RecieveWaiting;
         private int maxStreams;
         private Thread streamSendWorker;
         private Thread streamRecieveWorker;
@@ -23,8 +23,8 @@ namespace NetworkVideoEncoder
             this.source = source;
             this.output = output;
             this.extenstion = extenstion;
-            SendWaiting = new ConcurrentQueue<SlaveObject>();
-            RecieveWaiting = new ConcurrentQueue<SlaveObject>();
+            SendWaiting = new ConcurrentQueue<ClientObject>();
+            RecieveWaiting = new ConcurrentQueue<ClientObject>();
             maxStreams = maxConcurrentStreams;
             currentStreams = 0;
 
@@ -41,7 +41,7 @@ namespace NetworkVideoEncoder
         }
         private void recieveWorker()
         {
-            SlaveObject obj;
+            ClientObject obj;
 
             while (true)
             {
@@ -70,7 +70,7 @@ namespace NetworkVideoEncoder
         }
         private void sendWorker()
         {
-            SlaveObject obj;
+            ClientObject obj;
 
             while (true)
             {
@@ -95,7 +95,7 @@ namespace NetworkVideoEncoder
                 }
             }
         }
-        public void AddSlaveToSendQeue(SlaveObject obj)
+        public void AddClientToSendQeue(ClientObject obj)
         {
             if (obj != null)
             {
@@ -106,7 +106,7 @@ namespace NetworkVideoEncoder
                 }
             }
         }
-        public void AddSlaveToRecieveQeue(SlaveObject obj)
+        public void AddClientToRecieveQeue(ClientObject obj)
         {
             if (obj != null)
             {

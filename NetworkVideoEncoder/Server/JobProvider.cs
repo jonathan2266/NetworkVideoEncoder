@@ -8,11 +8,11 @@ using SharedTypes;
 using System.Linq;
 using System.Threading;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
     public class JobProvider
     {
-        private List<SlaveObject> slaves;
+        private List<ClientObject> clients;
         private List<Job> jobs;
         private string output;
         private string ffmpegCommand;
@@ -24,7 +24,7 @@ namespace NetworkVideoEncoder
         {
             this.output = output;
 
-            slaves = new List<SlaveObject>();
+            clients = new List<ClientObject>();
             jobs = new List<Job>();
 
             string[] files = Directory.GetFiles(source);
@@ -38,10 +38,10 @@ namespace NetworkVideoEncoder
             {
                 jobs.Add(new Job
                 {
-                    isGivenAsJob = false,
-                    jobURL = files[i],
-                    slaveID = -1,
-                    isDone = false
+                    IsGivenAsJob = false,
+                    JobURL = files[i],
+                    ClientID = -1,
+                    IsDone = false
                 });
             }
 
@@ -77,23 +77,23 @@ namespace NetworkVideoEncoder
         }
         private void giveJobs()
         {
-            foreach (var slave in slaves)
+            foreach (var client in clients)
             {
-                if (!slave.HasJob && slave.socket.IsAlive)
+                if (!client.HasJob && client.socket.IsAlive)
                 {
                     foreach (var job in jobs)
                     {
                         lock (job)
                         {
-                            if (!job.isGivenAsJob)
+                            if (!job.IsGivenAsJob)
                             {
-                                job.isGivenAsJob = true;
-                                job.slaveID = slave.socket.ID;
-                                slave.HasJob = true;
-                                slave.CurrentJob = job.jobURL;
-                                slave.socket.SendTCP(Headers.AssembleHeader(Headers.Job, Encoding.ASCII.GetBytes(job.jobURL)));
-                                slave.socket.SendTCP(Headers.AssembleHeader(Headers.ffmpegCommand, Encoding.ASCII.GetBytes(ffmpegCommand)));
-                                streamer.AddSlaveToSendQeue(slave);
+                                job.IsGivenAsJob = true;
+                                job.ClientID = client.socket.ID;
+                                client.HasJob = true;
+                                client.CurrentJob = job.JobURL;
+                                client.socket.SendTCP(Headers.AssembleHeader(Headers.Job, Encoding.ASCII.GetBytes(job.JobURL)));
+                                client.socket.SendTCP(Headers.AssembleHeader(Headers.ffmpegCommand, Encoding.ASCII.GetBytes(ffmpegCommand)));
+                                streamer.AddClientToSendQeue(client);
                                 break;
                             }
                         }
@@ -102,22 +102,22 @@ namespace NetworkVideoEncoder
             }
         }
 
-        public void AddSlave(TCPgeneral slave)
+        public void AddClient(TCPgeneral client)
         {
-            lock (slaves)
+            lock (clients)
             {
-                slave.OnError = OnError;
-                slave.OnRawDataRecieved += RecievedData;
-                slave.Start();
+                client.OnError = OnError;
+                client.OnRawDataRecieved += RecievedData;
+                client.Start();
 
-                SlaveObject obj = new SlaveObject();
-                obj.socket = slave;
+                ClientObject obj = new ClientObject();
+                obj.socket = client;
                 obj.HasJob = false;
                 obj.LastSeen = DateTime.Now;
                 obj.JobStarted = DateTime.MinValue;
                 obj.isDone = false;
-                obj.OnFinished += slaveFinished;
-                slaves.Add(obj);
+                obj.OnFinished += clientFinished;
+                clients.Add(obj);
 
                 giveJobs();
             }
@@ -129,17 +129,17 @@ namespace NetworkVideoEncoder
 
             if (header.SequenceEqual(Headers.HelloUpdate))
             {
-                lock (slaves)
+                lock (clients)
                 {
-                    SlaveObject obj = slaves.Where(s => s.socket.ID == id).FirstOrDefault();
+                    ClientObject obj = clients.Where(s => s.socket.ID == id).FirstOrDefault();
                     obj.LastSeen = DateTime.Now;
                 }
             }
             else if (header.SequenceEqual(Headers.RenderCompleted))
             {
-                lock (slaves)
+                lock (clients)
                 {
-                    streamer.AddSlaveToRecieveQeue(slaves.Where(s => s.socket.ID == id).FirstOrDefault());
+                    streamer.AddClientToRecieveQeue(clients.Where(s => s.socket.ID == id).FirstOrDefault());
                     Console.WriteLine("ID: " + id + " renderCompleted");
                 }
             }
@@ -148,20 +148,20 @@ namespace NetworkVideoEncoder
                 // log job from being bad or maybe ffmpeg command being bad 
                 Console.WriteLine("ID: " + id + " renderError");
 
-                SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
+                ClientObject obj = clients.Where(client => client.socket.ID == id).FirstOrDefault();
                 if (obj != null)
                 {
                     lock (obj)
                     {
-                        Job jo = jobs.Where(j => j.slaveID == obj.socket.ID).FirstOrDefault();
+                        Job jo = jobs.Where(j => j.ClientID == obj.socket.ID).FirstOrDefault();
 
                         if (jo != null)
                         {
                             lock (jo)
                             {
-                                jo.isGivenAsJob = false;
-                                jo.isDone = false;
-                                jo.slaveID = -1;
+                                jo.IsGivenAsJob = false;
+                                jo.IsDone = false;
+                                jo.ClientID = -1;
                             }
                         }
                     }
@@ -173,39 +173,39 @@ namespace NetworkVideoEncoder
         {
             Console.WriteLine("lost connection with:" + id + "  " + type.ToString() + "       " + message);
 
-            SlaveObject obj = slaves.Where(slave => slave.socket.ID == id).FirstOrDefault();
+            ClientObject obj = clients.Where(client => client.socket.ID == id).FirstOrDefault();
             if (obj != null)
             {
                 lock (obj)
                 {
-                    Job jo = jobs.Where(j => j.slaveID == obj.socket.ID).FirstOrDefault();
+                    Job jo = jobs.Where(j => j.ClientID == obj.socket.ID).FirstOrDefault();
 
                     if (jo != null)
                     {
                         lock (jo)
                         {
-                            jo.isGivenAsJob = false;
-                            jo.isDone = false;
-                            jo.slaveID = -1;
+                            jo.IsGivenAsJob = false;
+                            jo.IsDone = false;
+                            jo.ClientID = -1;
                         }
                     }
                     obj.socket.Dispose();
 
-                    slaves.Remove(obj);
+                    clients.Remove(obj);
                 }
             }
         }
-        private void slaveFinished(SlaveObject obj)
+        private void clientFinished(ClientObject obj)
         {
-            Job jo = jobs.Where(j => j.slaveID == obj.socket.ID).FirstOrDefault();
+            Job jo = jobs.Where(j => j.ClientID == obj.socket.ID).FirstOrDefault();
 
             if (jo != null)
             {
                 lock (jo)
                 {
-                    Console.WriteLine("job: " + jo.jobURL + " is done");
-                    jo.isDone = true;
-                    jo.slaveID = -1;
+                    Console.WriteLine("job: " + jo.JobURL + " is done");
+                    jo.IsDone = true;
+                    jo.ClientID = -1;
                     obj.HasJob = false;
                     obj.isDone = false;
                     obj.JobStarted = DateTime.MinValue;
@@ -219,14 +219,14 @@ namespace NetworkVideoEncoder
         }
         private void isAllDone()
         {
-            int incompleted = jobs.Where(job => job.isDone == false).Count();
+            int incompleted = jobs.Where(job => job.IsDone == false).Count();
 
             if (incompleted > 0)
             {
                 return;
             }
 
-            int stillWorking = slaves.Where(slave => slave.HasJob == false).Count();
+            int stillWorking = clients.Where(client => client.HasJob == false).Count();
 
             if (stillWorking > 0)
             {

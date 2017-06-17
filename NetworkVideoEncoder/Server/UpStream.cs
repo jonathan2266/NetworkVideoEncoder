@@ -8,18 +8,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
     public class UpStream
     {
-        private SlaveObject obj;
+        private ClientObject obj;
         private FileStream stream;
         private volatile bool isDone;
         private int l = 10000000; // = 10MB
         private byte[] data;
         private AutoResetEvent reset;
 
-        public UpStream(SlaveObject obj, string source)
+        public UpStream(ClientObject obj, string source)
         {
             reset = new AutoResetEvent(false);
             data = new byte[l];

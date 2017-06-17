@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A4A128D8-1E40-49C7-876A-A1376188C1B7}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>NetworkVideoEncoder</RootNamespace>
-    <AssemblyName>NetworkVideoEncoder</AssemblyName>
+    <RootNamespace>Server</RootNamespace>
+    <AssemblyName>Server</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -51,7 +51,7 @@
     <Compile Include="Job.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SlaveObject.cs" />
+    <Compile Include="ClientObject.cs" />
     <Compile Include="StreamHelper.cs" />
     <Compile Include="UpStream.cs" />
   </ItemGroup>

@@ -9,7 +9,7 @@ using AbstractTCPlib.UDPdiscovery;
 using System.Threading;
 using System.Net.Sockets;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
     class Program
     {
@@ -56,9 +56,9 @@ namespace NetworkVideoEncoder
 
             provider = new JobProvider(ffmpeg, source, output);
 
-            Thread listentoSlaves = new Thread(new ThreadStart(listen));
-            listentoSlaves.IsBackground = true;
-            listentoSlaves.Start();
+            Thread listentoClients = new Thread(new ThreadStart(listen));
+            listentoClients.IsBackground = true;
+            listentoClients.Start();
 
             provider.RunJobs();
 
@@ -76,7 +76,7 @@ namespace NetworkVideoEncoder
                     Console.WriteLine("new client found");
                     client.SendBufferSize = 64000;
                     client.ReceiveBufferSize = 64000; //needed for linux
-                    provider.AddSlave(new TCPgeneral(client, currentID++));
+                    provider.AddClient(new TCPgeneral(client, currentID++));
                 }
             }
         }

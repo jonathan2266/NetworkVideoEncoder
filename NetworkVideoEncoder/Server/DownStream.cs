@@ -8,17 +8,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NetworkVideoEncoder
+namespace Server
 {
     public class DownStream
     {
-        private SlaveObject obj;
+        private ClientObject obj;
         private FileStream stream;
         private byte[] pieceOfVideo;
         private string output;
         private AutoResetEvent waitHandle;
 
-        public DownStream(SlaveObject obj, string output, string extenstion)
+        public DownStream(ClientObject obj, string output, string extenstion)
         {
             waitHandle = new AutoResetEvent(false);
             this.output = output;
