@@ -31,15 +31,19 @@ namespace Server
             recieveBlock = new ManualResetEvent(false);
             sendBlock = new ManualResetEvent(false);
 
-            streamSendWorker = new Thread(new ThreadStart(sendWorker));
-            streamSendWorker.IsBackground = true;
+            streamSendWorker = new Thread(new ThreadStart(SendWorker))
+            {
+                IsBackground = true
+            };
             streamSendWorker.Start();
 
-            streamRecieveWorker = new Thread(new ThreadStart(recieveWorker));
-            streamRecieveWorker.IsBackground = true;
+            streamRecieveWorker = new Thread(new ThreadStart(RecieveWorker))
+            {
+                IsBackground = true
+            };
             streamRecieveWorker.Start();
         }
-        private void recieveWorker()
+        private void RecieveWorker()
         {
             ClientObject obj;
 
@@ -52,7 +56,7 @@ namespace Server
                     currentStreams++;
                     Thread streamThread = new Thread(() => {
                         recieveBlock.Reset();
-                        new DownStream(obj, output, extenstion).start();
+                        new DownStream(obj, output, extenstion).Start();
                         currentStreams--;
                     });
                     streamThread.IsBackground = true;
@@ -68,7 +72,7 @@ namespace Server
                 }
             }
         }
-        private void sendWorker()
+        private void SendWorker()
         {
             ClientObject obj;
 
@@ -80,7 +84,7 @@ namespace Server
                 {
                     currentStreams++;
                     Thread streamThread = new Thread(() => {
-                        new UpStream(obj, source).start(); });
+                        new UpStream(obj, source).Start(); });
                     currentStreams--;
                     streamThread.IsBackground = true;
                     streamThread.Start();

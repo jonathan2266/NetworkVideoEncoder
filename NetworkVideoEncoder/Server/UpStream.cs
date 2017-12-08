@@ -1,12 +1,9 @@
 ﻿using AbstractTCPlib;
 using SharedTypes;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Server
 {
@@ -37,7 +34,7 @@ namespace Server
 
             isDone = false;
         }
-        public void start()
+        public void Start()
         {
             sendNextPiece();
 
@@ -45,7 +42,7 @@ namespace Server
 
             stream.Close();
 
-            lock (obj)
+            lock (ClientDataBlock.Clients)
             {
                 obj.socket.OnRawDataRecieved -= OnRecieve;
                 obj.socket.OnError -= OnError;

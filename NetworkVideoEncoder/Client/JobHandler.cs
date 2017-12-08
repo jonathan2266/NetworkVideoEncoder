@@ -1,12 +1,10 @@
 ﻿using AbstractTCPlib;
 using SharedTypes;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Client
 {
@@ -39,7 +37,7 @@ namespace Client
             reset.Reset();
 
         }
-        private void sendVidPiece()
+        private void SendVidPiece()
         {
             if (sendCompleted)
             {
@@ -76,7 +74,7 @@ namespace Client
         {
             byte[] header = Headers.GetHeaderFromData(rawData);
 
-            if (Headers.ffmpegCommand.SequenceEqual(header))
+            if (Headers.FfmpegCommand.SequenceEqual(header))
             {
                 byte[] data;
                 Headers.SplitData(rawData, out header, out data);
@@ -130,7 +128,7 @@ namespace Client
             }
             else if (Headers.SendNext.SequenceEqual(header))
             {
-                sendVidPiece();
+                SendVidPiece();
             }
         }
 

@@ -46,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientDataBlock.cs" />
+    <Compile Include="JobDataBlock.cs" />
     <Compile Include="DownStream.cs" />
     <Compile Include="JobProvider.cs" />
     <Compile Include="Job.cs" />

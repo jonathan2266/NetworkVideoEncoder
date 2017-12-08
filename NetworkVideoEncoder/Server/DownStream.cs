@@ -1,12 +1,9 @@
 ﻿using AbstractTCPlib;
 using SharedTypes;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Server
 {
@@ -25,10 +22,10 @@ namespace Server
             pieceOfVideo = null;
             this.obj = obj;
             stream = File.OpenWrite(Path.Combine(output, Path.GetFileNameWithoutExtension(obj.CurrentJob) + extenstion));
-            obj.socket.OnRawDataRecieved += onRecieved;
+            obj.socket.OnRawDataRecieved += OnRecieved;
             obj.socket.OnError += OnError;
         }
-        public void start()
+        public void Start()
         {
             obj.socket.SendTCP(Headers.SendNext);
 
@@ -37,7 +34,7 @@ namespace Server
             stream.Close();
             
         }
-        private void onRecieved(int id, byte[] rawData)
+        private void OnRecieved(int id, byte[] rawData)
         {
             byte[] header = Headers.GetHeaderFromData(rawData);
 
@@ -60,9 +57,9 @@ namespace Server
             {
                 waitHandle.Set();
 
-                lock (obj)
+                lock (ClientDataBlock.Clients)
                 {
-                    obj.socket.OnRawDataRecieved -= onRecieved;
+                    obj.socket.OnRawDataRecieved -= OnRecieved;
                     obj.socket.OnError -= OnError;
                     obj.isDone = true;
                     obj.Finished();
@@ -73,9 +70,9 @@ namespace Server
         {
             waitHandle.Set();
 
-            lock (obj)
+            lock (ClientDataBlock.Clients)
             {
-                obj.socket.OnRawDataRecieved -= onRecieved;
+                obj.socket.OnRawDataRecieved -= OnRecieved;
                 obj.socket.OnError -= OnError;
             }
         }

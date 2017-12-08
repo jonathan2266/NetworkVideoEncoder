@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AbstractTCPlib;
 using AbstractTCPlib.UDPdiscovery;
 using System.Net.Sockets;
-using System.Threading;
-using SharedTypes;
-using System.IO;
 
 namespace Client
 {

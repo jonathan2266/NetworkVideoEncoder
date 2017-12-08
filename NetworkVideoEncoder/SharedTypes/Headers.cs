@@ -12,7 +12,7 @@ namespace SharedTypes
         public static byte[] SendCompleted { get { return new byte[] { 0, 0, 0, 5 }; } }
         public static byte[] RenderCompleted { get { return new byte[] { 0, 0, 0, 6 }; } }
         public static byte[] RenderError { get { return new byte[] { 0, 0, 0, 7 }; } }
-        public static byte[] ffmpegCommand { get { return new byte[] { 0, 0, 0, 8 }; } }
+        public static byte[] FfmpegCommand { get { return new byte[] { 0, 0, 0, 8 }; } }
 
         public static byte[] AssembleHeader(byte[] header, byte[] data)
         {
