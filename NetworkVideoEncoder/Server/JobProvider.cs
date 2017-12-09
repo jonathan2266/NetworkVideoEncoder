@@ -60,13 +60,15 @@ namespace Server
             streamer = new StreamHelper(4, source, output, extension);
 
             mainLoopWait = new ManualResetEvent(false);
-
         }
+
         public void RunJobs()
         {
             GiveJobs();
 
             mainLoopWait.WaitOne();
+
+            streamer.Dispose();
         }
         private void GiveJobs()
         {
@@ -210,7 +212,7 @@ namespace Server
                         jo.IsDone = true;
                         jo.ClientID = -1;
                         obj.HasJob = false;
-                        obj.isDone = false;
+                        obj.isDone = true;
                         obj.JobStarted = DateTime.MinValue;
                         obj.LastSeen = DateTime.Now;
                     }
@@ -223,23 +225,26 @@ namespace Server
         }
         private void IsAllDone()
         {
-            int incompleted = JobDataBlock.Jobs.Where(job => job.IsDone == false).Count();
-
-            if (incompleted > 0)
+            lock (JobDataBlock.Jobs)
             {
-                return;
+                int incompleted = JobDataBlock.Jobs.Where(job => job.IsDone == false).Count();
+
+                if (incompleted > 0)
+                {
+                    return;
+                }
+
+                int stillWorking = ClientDataBlock.Clients.Where(client => client.HasJob == true).Count();
+
+                if (stillWorking > 0)
+                {
+                    return;
+                }
+
+                Console.WriteLine("All jobs completed");
+
+                mainLoopWait.Set();
             }
-
-            int stillWorking = ClientDataBlock.Clients.Where(client => client.HasJob == false).Count();
-
-            if (stillWorking > 0)
-            {
-                return;
-            }
-
-            Console.WriteLine("All jobs completed");
-
-            mainLoopWait.Set();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Client
             gen.OnRawDataRecieved += OnRecieved;
             gen.OnError += OnError;
         }
-        public void start()
+        public void Start()
         {
             gen.Start();
 
@@ -43,12 +43,13 @@ namespace Client
             {
                 gen.SendTCP(Headers.SendCompleted);
                 stream.Close();
-                File.Delete(outputFile);
-                reset.Set();
+                File.Delete(Path.Combine(Resources.OutputFolder, outputFile));
 
                 sendCompleted = false;
                 ffmpegCommand = null;
                 job = null;
+
+                reset.Set();
 
             }
             else
@@ -80,9 +81,11 @@ namespace Client
                 Headers.SplitData(rawData, out header, out data);
                 ffmpegCommand = @Encoding.ASCII.GetString(data);
 
-                string formatted = ffmpegCommand.Replace("DATA", @job);
-                outputFile = "OUT";
-                int ind = formatted.IndexOf("OUT");
+                string formatted = ffmpegCommand.Replace(Resources.ffmpegDATA, Path.Combine(Resources.InputFolder, @job));
+
+                Guid uniqueName = Guid.NewGuid();
+                outputFile = uniqueName.ToString();
+                int ind = formatted.IndexOf(Resources.ffmpegOUT);
                 ind += 3;
 
                 for (int i = ind; i < formatted.Length; i++)
@@ -97,6 +100,8 @@ namespace Client
                     }
                 }
 
+                formatted = formatted.Replace(Resources.ffmpegOUT, Path.Combine(Resources.OutputFolder, uniqueName.ToString()));
+
                 ffmpeg = new RunFFMPEG(formatted);
                 Console.WriteLine("command:" + formatted);
             }
@@ -104,7 +109,7 @@ namespace Client
             {
                 byte[] data;
                 Headers.SplitData(rawData, out header, out data);
-                stream = new FileStream(Encoding.ASCII.GetString(data), FileMode.Append);
+                stream = new FileStream(Path.Combine(Resources.InputFolder, Encoding.ASCII.GetString(data)), FileMode.Append);
                 job = @Encoding.ASCII.GetString(data);
                 Console.WriteLine("job " + job);
             }
@@ -114,16 +119,15 @@ namespace Client
                 Headers.SplitData(rawData, out header, out vid);
                 stream.Write(vid, 0, vid.Length);
                 gen.SendTCP(Headers.SendNext);
-                Console.WriteLine("recieved vid piece");
             }
             else if (Headers.SendCompleted.SequenceEqual(header))
             {
                 stream.Close();
                 stream = null;
-                Console.WriteLine("recieved all");
+                Console.WriteLine("Recieved all");
                 ffmpeg.Start();
-                stream = new FileStream(outputFile, FileMode.Open);
-                File.Delete(@job);
+                stream = new FileStream(Path.Combine(Resources.OutputFolder, outputFile), FileMode.Open);
+                File.Delete(Path.Combine(Resources.InputFolder, @job));
                 gen.SendTCP(Headers.RenderCompleted);
             }
             else if (Headers.SendNext.SequenceEqual(header))

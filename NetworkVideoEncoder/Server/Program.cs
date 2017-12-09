@@ -45,14 +45,14 @@ namespace Server
             }
             if (!int.TryParse(args[3], out port))
             {
-                Console.WriteLine("port shoudl be in an int");
+                Console.WriteLine("port should be in an int");
                 Console.WriteLine(usage);
                 Environment.Exit(0);
             }
 
             provider = new JobProvider(ffmpeg, source, output);
 
-            Thread listentoClients = new Thread(new ThreadStart(listen));
+            Thread listentoClients = new Thread(new ThreadStart(Listen));
             listentoClients.IsBackground = true;
             listentoClients.Start();
 
@@ -60,7 +60,7 @@ namespace Server
 
         }
 
-        private static void listen()
+        private static void Listen()
         {
             UDPmaster master = new UDPmaster(broadCast, port);
 

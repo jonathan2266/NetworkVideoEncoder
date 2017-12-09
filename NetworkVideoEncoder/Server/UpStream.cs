@@ -36,7 +36,7 @@ namespace Server
         }
         public void Start()
         {
-            sendNextPiece();
+            SendNextPiece();
 
             reset.WaitOne();
 
@@ -48,7 +48,7 @@ namespace Server
                 obj.socket.OnError -= OnError;
             }
         }
-        private void sendNextPiece()
+        private void SendNextPiece()
         {
             if (isDone)
             {
@@ -88,7 +88,7 @@ namespace Server
 
             if (Headers.SendNext.SequenceEqual(header))
             {
-                sendNextPiece();
+                SendNextPiece();
             }
         }
         private void OnError(int id, ErrorTypes type, string message)

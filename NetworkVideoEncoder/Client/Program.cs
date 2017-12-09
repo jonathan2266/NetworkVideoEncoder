@@ -2,18 +2,17 @@
 using AbstractTCPlib;
 using AbstractTCPlib.UDPdiscovery;
 using System.Net.Sockets;
+using System.IO;
 
 namespace Client
 {
     class Program
     {
-        static string broadCast = "networkVideoEncoder";
-        static string usage = "command line input: udpPort";
         static void Main(string[] args)
         {
             if (args.Length != 1)
             {
-                Console.WriteLine(usage);
+                Console.WriteLine(Resources.Usage);
                 Console.ReadLine();
                 Environment.Exit(0);
             }
@@ -23,12 +22,12 @@ namespace Client
 
             if (!ok)
             {
-                Console.WriteLine(usage);
+                Console.WriteLine(Resources.Usage);
                 Console.ReadLine();
                 Environment.Exit(0);
             }
 
-            UDPclient udp = new UDPclient(broadCast, port);
+            UDPclient udp = new UDPclient(Resources.BroadCast, port);
             TcpClient client;
             while (true)
             {
@@ -42,7 +41,11 @@ namespace Client
                 }
             }
 
-            clearOutFile();
+            CreateFolders(Resources.InputFolder);
+            CreateFolders(Resources.OutputFolder);
+
+            ClearFolder(Resources.InputFolder);
+            ClearFolder(Resources.OutputFolder);
 
             TCPgeneral gen = new TCPgeneral(client, 0);
 
@@ -50,18 +53,26 @@ namespace Client
 
             while (true)
             {
-                job.start();
+                job.Start();
             }
         }
 
-        private static void clearOutFile()
+        private static void CreateFolders(string folder)
         {
-            //var files = Directory.GetFiles("", "OUT");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+        }
 
-            //foreach (var file in files)
-            //{
-            //    File.Delete(file);
-            //}
+        private static void ClearFolder(string folder)
+        {
+            var files = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder));
+
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
         }
     }
 }
