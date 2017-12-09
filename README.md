@@ -9,7 +9,7 @@ Using c# and ffmpeg to encode a batch of video's or music over a network both in
 * Windows requires that the ffmpeg.exe binary is supplied locally next to the client.exe
 * Running the **Server** or the **Client** binaries will output the correct input arguments
 * ffmpeg command file example
-    * File location given to the Server. Then distributed with every new job to a Client. The Client then uses this to start ffmpeg.
+    * File location given to the **Server** binary. The Client then uses this as input arguments for ffmpeg.
 ```bash
 -i "DATA" -c:v libx264 -preset fast -crf 50 -map 0:0 -map 0:1 -c:s copy -c:a copy "OUT.extension"
 ```
@@ -31,7 +31,7 @@ Client tcpPort
 ## Limitations
 
 * Video to pictures is not supported
-* The Server has to be started before the Clients.
+* The Server has to be started **before** the Clients.
   * UDP discovery can be improved
 
 ## Future
